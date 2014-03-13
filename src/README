@@ -1,0 +1,57 @@
+Fisher Vector for Dense Trajectories (DTFV)
+
+ABOUT
+DTFV is a C++ implementation of Fisher Vector coding for Dense Trajectories. For each video, it generates Fisher Vectors for the five feature modalities of DT (TRAJ, HOG, HOF, MBHX, MBHY). These vectors can be used to train video classifiers with linear SVM.
+
+DEPENDENCY
+DTFV requires VLFeat 0.9.17 (http://www.vlfeat.org/download.html)
+It works with the output format of Dense Trajectories 3rd version (http://lear.inrialpes.fr/people/wang/dense_trajectories)
+
+COMPILE
+First download and compile VLFeat 0.9.17, put libvl.so at ./vl
+Then simply "make"
+
+QUICK START
+We demonstrate how to extract DTFV for UCF 101 videos:
+1. Compile the code to get compute_fv
+2. In ../script/extract_fv.py, change the following variables:
+    dtBin: location of DT feature extractor
+    fvBin: location of Fisher Vector binary
+    tmpDir: temporary dir to store resized videos
+    pID: we use PBS for parallelization, pID is given by the $PBS_VNODENUM environment variable (from 0 to #cores-1), and is used for load balancing
+    pcaList: a text file which provides the locations of PCA projection matrix files, in the order of TRAJ, HOG, HOF, MBHX, MBHY
+    codeBookList: a text file which provides the locations of GMM codebook files, in the order of TRAJ, HOG, HOF, MBHX, MBHY
+
+    We provide pretrained PCA and GMM codebooks in the ../data directory. The number of GMM clusters is 512.
+3. In ../script/ffmpeg.py, provide your ffmpeg binary for the ffmpeg variable at line 7, it is used for resizing the videos
+4. Run the extract_fv.py script by:
+    python extract_fv.py [videoList] [outputDir] [totalCores]
+    Here,
+    videoList: each line is the location of a video file
+    outputDir: the directory to store the computed Fisher Vectors. For video A.avi, the computed Fisher Vectors are named as A.avi.[traj|hog|hof|mbhx|mbhy].fv.txt
+    totalCores: for PBS, we set it to the number of cores requested for the job. Please note that the script has no built-in parallelism, pID and totalCores are used to control which chunk of videos to process.
+
+MORE INFO
+1. Normalization
+    We first compute square root normalization, then compute L2 normalization. 
+2. Spatial pyramids and sliding windows
+    The code does support spatial pyramids and sliding windows, see initFV() in fisher.cpp for details.
+3. Non-default parameters of DT
+    The change of some parameters for the DT feature extractor may result in the change of dimensionality for each feature point. We use the default dimensions for each modality and hard code them in feature.h, line 15 to 19.
+4. Classification
+    We use LIBLINEAR (http://www.csie.ntu.edu.tw/~cjlin/liblinear/) to train a separate model for Fisher Vectors from each modality. LIBLINEAR supports probabilistic outputs, which can be used for late fusion.
+5. Memory and disc usage
+    Fisher Vectors are computed incrementally by aggregating feature points, so memory won't be a big problem. We used 4GB for each core. 
+    Raw DT features are not stored on disk, for each video, several MBs is used for the temporary resized video, and several MBs for the output Fisher Vectors.
+
+CONTACT
+For bug report, please send an email to chensun@usc.edu
+
+CITATION
+We are glad if you use this code for publication, please cite:
+@inproceedings{SunN13,
+    author    = {Chen Sun and Ram Nevatia},
+    title     = {Large-scale web video event classification by use of Fisher Vectors},
+    booktitle = {WACV},
+    year      = {2013}
+}
