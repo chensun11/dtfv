@@ -16,6 +16,7 @@ PCAWrapper::PCAWrapper(string fileName, bool whitening)  {
         cout<<"Cannot open "<<fileName<<endl;
         exit(-1);
     }
+    this->whitening = whitening;
     fin>>oDim>>pDim;
     projMat = new double[oDim * pDim];
     aveVec = new double[oDim];
